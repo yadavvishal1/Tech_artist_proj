@@ -12,11 +12,18 @@ public class CarController : MonoBehaviour
 	[Header("Juice Settings")]
 	[SerializeField] private float tiltAngle = 15f;
 	[SerializeField] private float tiltSpeed = 10f;
+	[SerializeField] private float swerveAngle = 20f;
+	[SerializeField] private float swerveDecay = 4f;
+	[SerializeField] private float swerveFrequency = 15f;
 
 	private bool isMoving = false;
 	private int currentStep = 0;
 	private Vector3 targetPosition;
 	private Quaternion initialRotation;
+	private float baseY;
+	private float swipeTimer = 100f;
+	private float lastSwipeDirection = 0f;
+	private float currentTilt = 0f;
 	private Vector2 swipeStartPosMouse;
 	private bool isSwipingMouse = false;
 	private Vector2 swipeStartPosTouch;
@@ -25,6 +32,8 @@ public class CarController : MonoBehaviour
 	private void Start()
 	{
 		initialRotation = transform.rotation;
+		baseY = transform.position.y;
+		targetPosition = transform.position;
 	}
 
 	private void Update()
@@ -44,27 +53,39 @@ public class CarController : MonoBehaviour
 		if (isMoving)
 		{
 			Vector3 smoothMovePos = Vector3.Lerp(transform.position, targetPosition, Time.deltaTime * speed);
-			transform.position = smoothMovePos;
+			transform.position = new Vector3(smoothMovePos.x, baseY, transform.position.z);
 		}
 		else
 		{
-			transform.position = new Vector3(targetPosition.x, transform.position.y, transform.position.z);
+			transform.position = new Vector3(targetPosition.x, baseY, transform.position.z);
 		}
 
-		// --- Juicy Car Tilt Logic ---
+		swipeTimer += Time.deltaTime;
+
+		// --- Juicy Car Tilt & Swerve Logic ---
 		float targetTilt = 0f;
+		float targetSwerve = 0f;
+		
 		if (isMoving)
 		{
 			float xDiff = targetPosition.x - transform.position.x;
 			if (Mathf.Abs(xDiff) > 0.05f)
 			{
-				// Lean INTO the turn: Moving right (positive xDiff) = negative Z rotation (Left tires lift).
+				// Lean INTO the turn (Z-axis)
 				targetTilt = -Mathf.Sign(xDiff) * tiltAngle;
 			}
 		}
+
+		// Swerve steering (Y-axis arc with damped wobble)
+		if (swipeTimer < 2f)
+		{
+			// Damped sine wave: amplitude * e^(-decay * t) * sin(freq * t)
+			targetSwerve = lastSwipeDirection * swerveAngle * Mathf.Exp(-swerveDecay * swipeTimer) * Mathf.Sin(swerveFrequency * swipeTimer);
+		}
 		
-		Quaternion targetRotation = initialRotation * Quaternion.Euler(0, 0, targetTilt);
-		transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * tiltSpeed);
+		// Independent smooth float lerping to prevent double-smoothing the mathematically precise swerve wave
+		currentTilt = Mathf.Lerp(currentTilt, targetTilt, Time.deltaTime * tiltSpeed);
+		transform.rotation = initialRotation * Quaternion.Euler(0, targetSwerve, currentTilt);
 	}
 
 	private void HandleMouseSwipe()
@@ -143,10 +164,12 @@ public class CarController : MonoBehaviour
 		currentStep += direction;
 		currentStep = Mathf.Clamp(currentStep, 0, (int)horizontalStepCount);
 		float newXPos = minMaxXPos.x + currentStep * stepSize;
-		targetPosition = new Vector3(newXPos, transform.position.y, transform.position.z);
+		targetPosition = new Vector3(newXPos, baseY, transform.position.z);
 		if(Vector3.Distance(transform.position, targetPosition) > 0.1f)
 		{
 			isMoving = true;
+			swipeTimer = 0f;
+			lastSwipeDirection = Mathf.Sign(targetPosition.x - transform.position.x);
 		}
 		else
 		{
