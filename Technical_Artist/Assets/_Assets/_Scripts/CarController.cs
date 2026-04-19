@@ -8,14 +8,25 @@ public class CarController : MonoBehaviour
 
 	[SerializeField] private float horizontalStepCount = 5f;
 	[SerializeField] private float swipeThreshold = 50f;
+	
+	[Header("Juice Settings")]
+	[SerializeField] private float tiltAngle = 15f;
+	[SerializeField] private float tiltSpeed = 10f;
 
 	private bool isMoving = false;
 	private int currentStep = 0;
 	private Vector3 targetPosition;
+	private Quaternion initialRotation;
 	private Vector2 swipeStartPosMouse;
 	private bool isSwipingMouse = false;
 	private Vector2 swipeStartPosTouch;
 	private bool isSwipingTouch = false;
+
+	private void Start()
+	{
+		initialRotation = transform.rotation;
+	}
+
 	private void Update()
 	{
 		/* if (Keyboard.current != null)
@@ -39,6 +50,21 @@ public class CarController : MonoBehaviour
 		{
 			transform.position = new Vector3(targetPosition.x, transform.position.y, transform.position.z);
 		}
+
+		// --- Juicy Car Tilt Logic ---
+		float targetTilt = 0f;
+		if (isMoving)
+		{
+			float xDiff = targetPosition.x - transform.position.x;
+			if (Mathf.Abs(xDiff) > 0.05f)
+			{
+				// Lean INTO the turn: Moving right (positive xDiff) = negative Z rotation (Left tires lift).
+				targetTilt = -Mathf.Sign(xDiff) * tiltAngle;
+			}
+		}
+		
+		Quaternion targetRotation = initialRotation * Quaternion.Euler(0, 0, targetTilt);
+		transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * tiltSpeed);
 	}
 
 	private void HandleMouseSwipe()
