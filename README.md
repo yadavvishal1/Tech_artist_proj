@@ -27,7 +27,7 @@ This project transforms a basic car prototype into a highly responsive, "juicy" 
 - **Task Tracking & Documentation**: Obsidian / Antigravity AI
 
 ## ⚡ Optimization & Decisions
-- **Decision 1**: **Art Direction & Theme**: Chose a **"Sunrise in a Desert"** visual theme during the planning stage. This aesthetic relies on highly vibrant, saturated colors (warm oranges, pinks, cyans) and high-key lighting to achieve the classic "SEGA Blue Sky" arcade feel, ensuring maximal visual clarity.
+- **Decision 1**: **Art Direction & Theme**: Chose a **"Sunrise in a Desert"** visual theme during the planning stage. This aesthetic relies on warm, earth-toned color palettes (sandy yellows, ochres, deep oranges) and high-key lighting. The goal was to establish a striking, high-contrast look that maintains excellent visual clarity without overcomplicating the color space.
 - **Decision 2**: Using **Reference-Based Design** (Dashy Crashy) to ensure a cohesive, non-realistic stylized look.
 - **Decision 3**: **Full-Pipeline Vertex Color Optimization**: The entire environment (mountains, sidewalks, fences, road, desert ground) and the dynamic Player Car mesh are explicitly modeled and colored using vertex painting in Blender. To support this natively in URP, I designed a **Custom Shader Graph** constructed specifically to read and output vertex colors, creating a unified material that completely bypasses texture lookups. This saves massive amounts of texture memory and minimizes GPU sampling latency on constrained mobile devices.
 - **Decision 4**: **Post-Processing (URP)**: Added **Bloom** (for sun bleed), **Vignette** (for focus), and **ACES Tonemapping** (for cinematic color response). This achieves the "High-Key" arcade look required by the brief.
